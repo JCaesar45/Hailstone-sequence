@@ -1,0 +1,426 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SYZYGY | Collatz Conjecture Visualization</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --void: #0a0a0a;
+      --abyss: #111111;
+      --silver: #c0c0c0;
+      --platinum: #e5e5e5;
+      --gold: #d4af37;
+      --crimson: #8b0000;
+      --obsidian: #1a1a1a;
+      --smoke: rgba(255, 255, 255, 0.05);
+      --transition-bezier: cubic-bezier(0.76, 0, 0.24, 1);
+    }
+
+    body {
+      background-color: var(--void);
+      color: var(--silver);
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      cursor: crosshair;
+    }
+
+    #particle-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .master-container {
+      position: relative;
+      z-index: 1;
+      width: 90vw;
+      max-width: 800px;
+      backdrop-filter: blur(20px);
+      background: linear-gradient(165deg, rgba(10, 10, 10, 0.95) 0%, rgba(20, 20, 20, 0.8) 100%);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(212, 175, 55, 0.05);
+      padding: 4rem 3rem;
+      border-radius: 2px;
+      clip-path: polygon(0% 0%, 100% 0%, 100% 90%, 95% 100%, 0% 100%);
+    }
+
+    .master-container::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      right: -1px;
+      bottom: -1px;
+      background: linear-gradient(45deg, var(--gold), transparent, var(--gold), transparent);
+      z-index: -1;
+      opacity: 0.1;
+      animation: borderGlow 8s linear infinite;
+    }
+
+    @keyframes borderGlow {
+      0% {
+        background-position: 0% 0%;
+      }
+
+      100% {
+        background-position: 200% 200%;
+      }
+    }
+
+    .typography-lockup {
+      margin-bottom: 3rem;
+    }
+
+    .project-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 400;
+      letter-spacing: 1.5rem;
+      text-transform: uppercase;
+      color: transparent;
+      -webkit-text-stroke: 1px var(--gold);
+      text-stroke: 1px var(--gold);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+      transition: color 0.4s var(--transition-bezier);
+    }
+
+    .project-name:hover {
+      color: var(--gold);
+      -webkit-text-stroke: 0px;
+      text-stroke: 0px;
+    }
+
+    .subtitle {
+      font-size: 0.7rem;
+      letter-spacing: 0.6rem;
+      text-transform: uppercase;
+      color: rgba(212, 175, 55, 0.6);
+      font-weight: 300;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 2rem 0;
+      opacity: 0.5;
+    }
+
+    .input-suite {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+    }
+
+    .input-field {
+      flex: 1;
+      min-width: 200px;
+      background: var(--obsidian);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--platinum);
+      padding: 1.2rem 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      letter-spacing: 0.2rem;
+      transition: all 0.3s var(--transition-bezier);
+      border-radius: 1px;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+      background: #1a1a1a;
+    }
+
+    .input-field::placeholder {
+      color: rgba(192, 192, 192, 0.3);
+      letter-spacing: 0.1rem;
+    }
+
+    .cta-button {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 1.2rem 2.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.5rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.4s var(--transition-bezier);
+      position: relative;
+      overflow: hidden;
+      border-radius: 1px;
+    }
+
+    .cta-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+      transition: left 0.6s var(--transition-bezier);
+    }
+
+    .cta-button:hover::before {
+      left: 100%;
+    }
+
+    .cta-button:hover {
+      background: var(--gold);
+      color: var(--void);
+      box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+    }
+
+    .cta-button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .result-oracle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .data-card {
+      background: var(--smoke);
+      backdrop-filter: blur(10px);
+      padding: 2rem;
+      border-left: 2px solid var(--gold);
+      transition: transform 0.3s var(--transition-bezier), box-shadow 0.3s;
+    }
+
+    .data-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    .data-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.3rem;
+      text-transform: uppercase;
+      color: rgba(212, 175, 55, 0.7);
+      margin-bottom: 0.8rem;
+    }
+
+    .data-value {
+      font-size: 2.5rem;
+      font-weight: 300;
+      color: var(--platinum);
+      word-break: break-all;
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .glitch-effect {
+      animation: glitch 0.3s linear;
+    }
+
+    @keyframes glitch {
+      0% {
+        transform: translate(2px, -2px);
+        opacity: 0.8;
+      }
+
+      25% {
+        transform: translate(-2px, 2px);
+        opacity: 1;
+      }
+
+      50% {
+        transform: translate(-1px, -1px);
+        opacity: 0.9;
+      }
+
+      75% {
+        transform: translate(1px, 1px);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translate(0);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .master-container {
+        padding: 2rem 1.5rem;
+      }
+
+      .result-oracle {
+        grid-template-columns: 1fr;
+      }
+
+      .project-name {
+        letter-spacing: 0.8rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="particle-canvas"></canvas>
+
+  <div class="master-container">
+    <div class="typography-lockup">
+      <h1 class="project-name">SYZYGY</h1>
+      <p class="subtitle">Collatz Conjecture Oracle</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="input-suite">
+      <input type="number" id="limitInput" class="input-field" placeholder="ENTER LIMIT" value="50000" min="1">
+      <button id="invokeBtn" class="cta-button">INVOKE</button>
+    </div>
+
+    <div class="result-oracle" id="resultContainer">
+      <div class="data-card">
+        <div class="data-label">Optimal Seed</div>
+        <div class="data-value" id="seedValue">—</div>
+      </div>
+      <div class="data-card">
+        <div class="data-label">Sequence Length</div>
+        <div class="data-value" id="lengthValue">—</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const particles = [];
+    const particleCount = 70;
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 0.8;
+        this.speedY = (Math.random() - 0.5) * 0.8;
+        this.opacity = Math.random() * 0.5 + 0.1;
+        this.connectionDistance = 150;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(212, 175, 55, ${this.opacity})`;
+        ctx.fill();
+      }
+    }
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < particles[i].connectionDistance) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(212, 175, 55, ${0.08 * (1 - distance / particles[i].connectionDistance)})`;
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    const API_BASE = 'http://localhost:8001';
+    async function fetchHailstoneSequence(limit) {
+      const response = await fetch(`${API_BASE}/hailstone?limit=${encodeURIComponent(limit)}`);
+      if (!response.ok) {
+        throw new Error(`API invocation failed: ${response.status}`);
+      }
+      return await response.json();
+    }
+    const limitInput = document.getElementById('limitInput');
+    const invokeBtn = document.getElementById('invokeBtn');
+    const seedValue = document.getElementById('seedValue');
+    const lengthValue = document.getElementById('lengthValue');
+    const resultContainer = document.getElementById('resultContainer');
+    invokeBtn.addEventListener('click', async () => {
+      const limit = parseInt(limitInput.value, 10);
+      if (isNaN(limit) || limit < 1) {
+        limitInput.style.borderColor = '#8b0000';
+        setTimeout(() => {
+          limitInput.style.borderColor = 'rgba(255,255,255,0.1)';
+        }, 1500);
+        return;
+      }
+      invokeBtn.disabled = true;
+      invokeBtn.textContent = 'COMPUTING...';
+      try {
+        const result = await fetchHailstoneSequence(limit);
+        seedValue.textContent = result[0];
+        lengthValue.textContent = result[1];
+        resultContainer.classList.add('glitch-effect');
+        setTimeout(() => {
+          resultContainer.classList.remove('glitch-effect');
+        }, 300);
+      } catch (error) {
+        seedValue.textContent = 'ERR';
+        lengthValue.textContent = 'ERR';
+        console.error('Oracle query failed:', error);
+      } finally {
+        invokeBtn.disabled = false;
+        invokeBtn.textContent = 'INVOKE';
+      }
+    });
+    limitInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        invokeBtn.click();
+      }
+    });
+  </script>
+</body>
+
+</html>
